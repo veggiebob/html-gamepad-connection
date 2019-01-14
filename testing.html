@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Controllers on Webpage</title>
+    </head>
+    <style>
+        .outline {
+            background-color: transparent;
+            border-radius: 1000px;
+            border: black 2px solid;
+            float: left;
+        }
+        .big {
+            width: 100px;
+            height: 100px;
+        }
+        .small {
+            width: 60px;
+            height: 60px;
+            transform: translate(25%, 25%);
+            margin-left: 0px;
+            margin-top: 0px;
+        }
+        /*
+        .joyleft {
+            left:101px;
+            top:196px;
+        }
+        .joyright {
+            left: 300px;
+            top: 255px;
+        }
+        */
+        .controller-selection {
+            background-color: gray;
+        }
+        .container {
+            background-color: transparent;
+            border: black 2px solid;
+            height: 110px;
+            padding: 0px;
+        }
+    </style>
+    <body>
+    <canvas id="mycanvas"></canvas>
+    <div class="container">
+    <div class="outline big joyleft" id="joy1big">
+        <div class="outline small joyleft" id="joy1small"></div>
+    </div>
+    <div class="outline big joyright" id="joy2big">
+        <div class="outline small joyright" id="joy2small"></div>
+    </div>
+    </div>
+    <div class="controller-selection">
+        <form action="" id="controller-select">
+            <!-- <input type="radio" name="gender" value="0"> -->
+        </form>
+        <span id="controller-type"></span>
+    </div>
+    </body>
+    <script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script>
+    <!--
+    <script>
+        var sketchProc = function(processingInstance) {
+            with(processingInstance) {
+                size(400, 378);
+                frameRate(30);
+                // ProgramCodeGoesHere
+                background(0);
+            }
+        }; // Get the canvas that Processing-js will use
+        var canvas = document.getElementById("mycanvas");
+        // Pass the function sketchProc (defined in myCode.js) to Processing's constructor.
+        var processingInstance = new Processing(canvas, sketchProc);
+    </script>
+    -->
+    <script>
+        window.addEventListener("gamepadconnected", function(e) {
+            var gp = window.navigator.getGamepads()[e.gamepad.index];
+            try{
+              alert("Gamepad connected at index " + gp.index + ": " + gp.id + ". It has " + gp.buttons.length + " buttons and " + gp.axes.length + " axes.");
+            }catch(eee){}
+        });
+        var controllers = [];
+        //standard layout
+        //joy1 is analog (generally left side)
+        //joy2 is other joystick (generally right side)
+        //dpad is directional buttons on left side
+        //apad is directional buttons on right side
+        /** indices of directional buttons are defined as follows: (clockwise)
+            3
+           2 0
+            1
+        */
+        //start is primary 'start' button
+        //select is secondary 'start' button
+        //R is back of controller right side top
+        //L is back of controller left side top
+        //ZR is back of controller right side trigger
+        //LR is back of controller right side trigger
+        //extra is any extra button
+        //joy1press: joy1 pressed down 
+        //joy2press: joy2 pressed down
+        var button_layout = {
+            //-1 represent missing buttons that have no equivalent
+            //-2 represents a button needing to be filled in
+            "gamecube":{
+                joy1:[0, 1],
+                joy2:[5, 2],
+                dpad:[13, 14, 15, 12],
+                apad:[1, 2, 3, 0],//gamecube a-pad goes ABYX
+                ZR: 5,
+                ZL: 4,
+                R: 7,
+                L:-1,
+                start:9,
+                select:-1,
+                extra: -1
+            },
+            "ps4":{
+                joy1:[0, 1],
+                joy2:[2, 3],
+                dpad:[15, 13, 14, 12],
+                apad:[1, 0, 2, 3],
+                //note: ps4 triggers are gradients from 0-1
+                ZR: 7,
+                ZL: 6,
+                R: 5,
+                L: 4,
+                start: 9,
+                select: 8,
+                extra: 17,
+            },
+            "logitech_usb":{
+                joy1: [0, 1],
+                joy2: [2, 3],
+                joy1press: 10,
+                joy2press: 11,
+                dpad: [15, 13, 14, 12],
+                apad: [1, 0, 2, 3],
+                R: 5,
+                L: 4,
+                LR: 6,
+                ZR: 7,
+                start: 9,
+                select: 8,
+            }
+        };
+        var getJoystick = function(joyString, controller) {
+            var layot = controller.pad_layout;
+            return [controller.data.axes[layot[joyString][0]], controller.data.axes[layot[joyString][1]]];
+        };
+        var getButton = function(buttonString, controller) {
+            var layot = controller.pad_layout;
+            return controller.data.buttons[layot[buttonString]].value;
+        };
+        var getPad = function(padString, controller) {
+            var layot = controller.pad_layout;
+            var but = controller.data.buttons;
+            return [
+                but[layot[padString][0]].value,
+                but[layot[padString][1]].value,
+                but[layot[padString][2]].value,
+                but[layot[padString][3]].value,
+            ];
+        };
+        var refreshControllers = function(gamepads) {
+            controllers = [];
+            document.getElementById("controller-select").innerHTML = "";
+            for(var i = 0; i<gamepads.length; i++) {
+                if(gamepads[i]!==null) {
+                    var d = gamepads[i];
+                    var n = d.id;
+                    var g = (/054c/.test(n))?"ps4":(/0079/.test(n))?"gamecube":(n.indexOf("046d")>=0)?"logitech_usb":"unknown";
+                    if (g==="unknown") {
+                        continue;
+                    }
+                    controllers.push({
+                        data: d,
+                        config: g,
+                        pad_layout: button_layout[g],
+                        getIndex: i
+                    });
+                    document.getElementById("controller-select").innerHTML += 
+              '<input type="radio" name="controller-index" value="'+gp.index+'">';
+                }
+            }
+        };
+        var updateControllers = function(gamepads) {
+            for(var i = 0; i<controllers.length; i++) {
+                var g = gamepads[controllers[i].getIndex];
+                if(!g) {
+                    //println("controller " + controllers[i].data.id + " froze");
+                    continue;
+                }
+                controllers[i].data = gamepads[controllers[i].getIndex];
+            }
+            document.getElementById("controller-type").innerHTML = document.getElementById("controller-select").value;
+        };
+        var mapToKeys = function(ks, control, keyString, values) {
+            var isArr = keyString.constructor===Array;
+            for(var i = 0; i<keyString.length; i++) {
+                if(isArr) {
+                    ks[keyString[i]] = values[i];
+                } else {
+                    ks[keyString.charCodeAt(i)-32] = values[i];
+                }
+            }
+        };
+        var gamepads = window.navigator.getGamepads ? window.navigator.getGamepads() : (window.navigator.webkitGetGamepads ? window.navigator.webkitGetGamepads : []);
+        refreshControllers(gamepads);
+        var pxNum = function(t) {
+            //console.log(t.constructor);
+            return +t.substring(t.length-2);
+        };
+        window.setInterval(function() {
+            //document.getElementById("joy1small").style.left = control
+            var gamepads = window.navigator.getGamepads ? window.navigator.getGamepads() : (window.navigator.webkitGetGamepads ? window.navigator.webkitGetGamepads : []);
+            updateControllers(gamepads);
+            //for(var i = 0; i<controllers.length; i++) {
+            //    console.log(getJoystick("joy1", controllers[i]));
+            //}
+            var joy1Pos = [pxNum(document.getElementById("joy1big").style.width), pxNum(document.getElementById("joy1big").style.top)];
+            var joy2Pos = [pxNum(document.getElementById("joy2big").style.left), pxNum(document.getElementById("joy2big").style.top)];
+            var cp = 1;
+            var j = getJoystick("joy1", controllers[cp]);
+            console.log(joy1Pos);
+            document.getElementById("joy1small").style.left = (j[0]*50+joy1Pos[0])+"px";
+            document.getElementById("joy1small").style.top = (j[1]*50+joy1Pos[1])+"px";
+        }, 1000/30);
+    </script>
+</html>
