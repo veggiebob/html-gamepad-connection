@@ -76,12 +76,6 @@
     </script>
     -->
     <script>
-        window.addEventListener("gamepadconnected", function(e) {
-            var gp = window.navigator.getGamepads()[e.gamepad.index];
-            try{
-              alert("Gamepad connected at index " + gp.index + ": " + gp.id + ". It has " + gp.buttons.length + " buttons and " + gp.axes.length + " axes.");
-            }catch(eee){}
-        });
         var controllers = [];
         var selectedController = 0;
         var maxIndex = -1;
@@ -215,6 +209,14 @@
         };
         var gamepads = window.navigator.getGamepads ? window.navigator.getGamepads() : (window.navigator.webkitGetGamepads ? window.navigator.webkitGetGamepads : []);
         refreshControllers(gamepads);
+        window.addEventListener("gamepadconnected", function(e) {
+            var gp = window.navigator.getGamepads()[e.gamepad.index];
+            try{
+              alert("Gamepad connected at index " + gp.index + ": " + gp.id + ". It has " + gp.buttons.length + " buttons and " + gp.axes.length + " axes.");
+              gamepads = window.navigator.getGamepads ? window.navigator.getGamepads() : (window.navigator.webkitGetGamepads ? window.navigator.webkitGetGamepads : []);
+              refreshControllers(gamepads)
+            }catch(eee){}
+        });
         var pxNum = function(t) {
             return +t.substring(t.length-2);
         };
@@ -253,6 +255,7 @@
             var gamepads = window.navigator.getGamepads ? window.navigator.getGamepads() : (window.navigator.webkitGetGamepads ? window.navigator.webkitGetGamepads : []);
             updateControllers(gamepads);
             var cp = selectedController;
+           // console.log(controllers.length + " length");
             var j = getJoystick("joy1", controllers[cp]);
             document.getElementById("joy1small").style.marginLeft = (j[0]*25)+"px";
             document.getElementById("joy1small").style.marginTop = (j[1]*25)+"px";
