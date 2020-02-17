@@ -7,6 +7,14 @@ var drawRobot = function (processingInstance) {
         var radius = 50;
         var angle = 0;
         var anglespeed = 0;
+        var cone = loadImage('cone.png')
+        imageMode(CENTER);
+        var sign = function(x) {
+            return x > 0 ? 1:-1;
+        }
+        var scaleInput = function (x) {
+            return Math.pow(Math.abs(x), 2) * sign(x);
+        }
         setup = function() {
             width = 600;
             height = 400;
@@ -19,10 +27,11 @@ var drawRobot = function (processingInstance) {
                 var controller = controllers[selectedController];
                 var leftAxis = getJoystick("joy1", controller);
                 var rightAxis = getJoystick("joy2", controller);
-                var leftTank = leftAxis[1] * 5;
-                var rightTank = rightAxis[1] * 5;
+                var difficulty = 3.5;
+                var leftTank = scaleInput(leftAxis[1]) * difficulty;
+                var rightTank = scaleInput(rightAxis[1]) * difficulty;
                 var trackWidth = 26;
-                var I = 1/2 * 120 * 15 * 15; // robot radius 15 inches
+                var I = 1/2 * 120 * 15 * 15      * 0.3; // robot radius 15 inches
                 var torque = (rightTank - leftTank) * trackWidth; // T = I * a
                 var alpha = torque / I; // theta / s ^ 2
                 var rotateRadius = trackWidth / (rightTank - leftTank) // in
@@ -34,6 +43,8 @@ var drawRobot = function (processingInstance) {
             } catch (e) {
                 console.log("no controller data")
             }
+            image(cone, width * 0.25, height * 0.5, 50, 50)
+            image(cone, width * 0.75, height * 0.5, 50, 50)
             fill(255, 255, 255, 100);
             rect(-1, -1, width+2, height+2);
             p1 = [x + radius * Math.cos(angle),
