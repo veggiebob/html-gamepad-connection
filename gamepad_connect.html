@@ -41,6 +41,11 @@
             height: 110px;
             padding: 0px;
         }
+        #display {
+            border: black 2px solid;
+            width: 600px;
+            height: 400px;
+        }
     </style>
     <body>
     <div class="container">
@@ -58,7 +63,13 @@
         <span id="controller-type"></span>
     </div>
     </body>
+    <!-- <button type="button" id="print-values">print</button> -->
+    <canvas id="display"></canvas>
     <script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script>
+    <script
+			  src="https://code.jquery.com/jquery-3.4.1.min.js"
+			  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+			  crossorigin="anonymous"></script>
     <!--
     <canvas id="mycanvas"></canvas>
     <script>
@@ -101,6 +112,20 @@
         var button_layout = {
             //-1 represent missing buttons that have no equivalent
             //-2 represents a button needing to be filled in
+            "xbox":{
+                joy1:[0, 1],
+                joy2:[2, 3],
+                dpad:[15, 13, 14, 12],
+                apad:[1, 0, 2, 3],
+                //note: ps4 triggers are gradients from 0-1
+                ZR: 7,
+                ZL: 6,
+                R: 5,
+                L: 4,
+                start: 9,
+                select: 8,
+                extra: 17,
+            },
             "gamecube":{
                 joy1:[0, 1],
                 joy2:[5, 2],
@@ -168,8 +193,9 @@
                 if(gamepads[i]!==null) {
                     var d = gamepads[i];
                     var n = d.id;
-                    var g = (/054c/.test(n))?"ps4":(/0079/.test(n))?"gamecube":(n.indexOf("046d")>=0)?"logitech_usb":"unknown";
+                    var g = (/054c/.test(n))?"ps4":(/0079/.test(n))?"gamecube":(n.indexOf("046d")>=0)?"logitech_usb":n.indexOf("xinput")>=0?"xbox":"unknown";
                     if (g==="unknown") {
+                    	console.log(d);
                         continue;
                     }
                     controllers.push({
@@ -212,8 +238,9 @@
         window.addEventListener("gamepadconnected", function(e) {
             var gp = window.navigator.getGamepads()[e.gamepad.index];
             try{
-              alert("Gamepad connected at index " + gp.index + ": " + gp.id + ". It has " + gp.buttons.length + " buttons and " + gp.axes.length + " axes.");
+              //alert("Gamepad connected at index " + gp.index + ": " + gp.id + ". It has " + gp.buttons.length + " buttons and " + gp.axes.length + " axes.");
               gamepads = window.navigator.getGamepads ? window.navigator.getGamepads() : (window.navigator.webkitGetGamepads ? window.navigator.webkitGetGamepads : []);
+              //console.log(gp);
               refreshControllers(gamepads)
             }catch(eee){}
         });
@@ -264,4 +291,5 @@
             document.getElementById("joy2small").style.marginTop = (j[1]*25)+"px";
         }, 1000/60);
     </script>
+    <script src="draw_robot.js"></script>
 </html>
